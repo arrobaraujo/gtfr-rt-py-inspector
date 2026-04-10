@@ -3,21 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Real-time GTFS feed inspector with interactive map visualization and static data enrichment.">
     <title>GTFS-RT Inspector</title>
-    <!-- Configurações do Leaflet -->
+
+    <!-- Leaflet Map Engine -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-rotatedmarker/leaflet.rotatedMarker.js"></script>
     
-    <!-- Fontes do Google -->
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
+    <!-- Application Styles & i18n -->
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="/static/js/i18n.js"></script>
 </head>
 <body>
     <div id="app">
-        <!-- Sidebar Dinâmica -->
+        <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header" style="position: relative;">
                 <h1 data-i18n="app_title">GTFS-RT Inspector 🚌</h1>
@@ -26,9 +29,10 @@
                     <option value="en">EN</option>
                     <option value="es">ES</option>
                 </select>
-                <p>Monitoramento em Tempo Real</p>
+                <p data-i18n="app_subtitle">Monitoramento em Tempo Real</p>
             </div>
             
+            <!-- Metrics Cards -->
             <div class="sidebar-section metrics">
                 <div class="metric-card">
                     <span class="metric-value" id="metrics-vehicles">0</span>
@@ -40,7 +44,7 @@
                 </div>
             </div>
 
-            <!-- Upload Estático GTFS -->
+            <!-- Static GTFS Upload -->
             <div class="sidebar-section">
                 <h2 data-i18n="upload_title">Upload GTFS Estático</h2>
                 <div class="upload-container">
@@ -50,7 +54,7 @@
                 <div id="upload-status" class="status-msg"></div>
             </div>
 
-            <!-- Configurações API Links -->
+            <!-- Map Visual Options -->
             <div class="sidebar-section settings">
                 <h2 data-i18n="visuals_title">Visuais do Mapa</h2>
                 <div class="input-group">
@@ -72,19 +76,20 @@
                 </div>
             </div>
 
+            <!-- GTFS-RT Feed URLs -->
             <div class="sidebar-section settings">
                 <h2 data-i18n="links_title">Links GTFS-RT</h2>
                 <div class="input-group">
                     <label data-i18n="settings_link_vp">Vehicle Positions</label>
-                    <input type="text" id="link-vp" placeholder="URL do endpoint VP">
+                    <input type="text" id="link-vp" placeholder="https://...">
                 </div>
                 <div class="input-group">
                     <label data-i18n="settings_link_tu">Trip Updates</label>
-                    <input type="text" id="link-tu" placeholder="URL do endpoint TU">
+                    <input type="text" id="link-tu" placeholder="https://...">
                 </div>
                 <div class="input-group">
                     <label data-i18n="settings_link_alert">Alerts</label>
-                    <input type="text" id="link-a" placeholder="URL do endpoint Alerts">
+                    <input type="text" id="link-a" placeholder="https://...">
                 </div>
                 <div class="input-group">
                     <label data-i18n="settings_interval">Intervalo de Relógio (segundos)</label>
@@ -94,7 +99,7 @@
                 <div id="settings-status" class="status-msg"></div>
             </div>
             
-            <!-- Lista de Alertas -->
+            <!-- Alerts Feed -->
             <div class="sidebar-section flex-grow">
                 <h2 data-i18n="alerts_title">Últimos Alertas</h2>
                 <div id="alerts-container" class="alerts-list">
@@ -103,15 +108,15 @@
             </div>
         </aside>
 
-        <!-- Container do Mapa -->
+        <!-- Map Container -->
         <main class="map-container" style="position: relative;">
             <div id="map" style="width: 100%; height: 100%;"></div>
             <pre id="raw-data-container" style="display: none; position: absolute; top:0; left:0; width:100%; height:100%; margin:0; padding:20px; background: rgba(0,0,0,0.9); color: #0f0; overflow: auto; z-index: 9999; font-size: 13px; line-height: 1.5; box-sizing: border-box;"></pre>
             
-            <!-- Overlay Carregando -->
+            <!-- Loading Overlay -->
             <div id="loading-overlay" class="loading-overlay hidden">
                 <div class="spinner"></div>
-                <p>Sincronizando dados...</p>
+                <p data-i18n="loading_msg">Sincronizando dados...</p>
             </div>
         </main>
     </div>

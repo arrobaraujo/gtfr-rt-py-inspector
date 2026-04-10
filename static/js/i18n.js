@@ -1,6 +1,21 @@
+/**
+ * GTFS-RT Inspector — Internationalization Engine
+ *
+ * Lightweight, framework-free i18n system.
+ * Supports: Portuguese (pt), English (en), Spanish (es).
+ *
+ * Usage:
+ *   - Static HTML:  <span data-i18n="key">Fallback</span>
+ *   - Dynamic JS:   t('key')
+ */
+
 const translations = {
+    // -----------------------------------------------------------------------
+    // Portuguese (default)
+    // -----------------------------------------------------------------------
     pt: {
-        "app_title": "Inspetor GTFS-RT Python",
+        "app_title": "Inspetor GTFS-RT Python 🚌",
+        "app_subtitle": "Monitoramento em Tempo Real",
         "settings_link_vp": "Vehicle Positions",
         "settings_link_tu": "Trip Updates",
         "settings_link_alert": "Alerts",
@@ -20,12 +35,15 @@ const translations = {
         "msg_uploading": "Fazendo upload e processando... Aguarde.",
         "msg_gtfs_success": "GTFS estático carregado com sucesso!",
         "msg_gtfs_err": "Erro no upload",
+        "dir_0": "Ida",
+        "dir_1": "Volta",
         "links_title": "Links GTFS-RT",
         "metrics_title": "Métricas de Carga",
         "metrics_vehicles": "Veículos Rastreados:",
         "metrics_alerts": "Alertas de Rota:",
         "alerts_title": "Mural de Alertas (Feeds)",
         "alerts_empty": "Nenhum alerta ativo.",
+        "loading_msg": "Sincronizando dados...",
         "popup_vehicle": "Veículo",
         "popup_id": "ID da Linha",
         "popup_route": "Linha",
@@ -43,8 +61,13 @@ const translations = {
         "popup_type": "Tipo",
         "na": "N/A"
     },
+
+    // -----------------------------------------------------------------------
+    // English
+    // -----------------------------------------------------------------------
     en: {
-        "app_title": "GTFS-RT Python Inspector",
+        "app_title": "GTFS-RT Python Inspector 🚌",
+        "app_subtitle": "Real-Time Monitoring",
         "settings_link_vp": "Vehicle Positions",
         "settings_link_tu": "Trip Updates",
         "settings_link_alert": "Alerts",
@@ -64,12 +87,15 @@ const translations = {
         "msg_uploading": "Uploading and processing... Please wait.",
         "msg_gtfs_success": "Static GTFS loaded successfully!",
         "msg_gtfs_err": "Upload error",
+        "dir_0": "Outbound",
+        "dir_1": "Inbound",
         "links_title": "GTFS-RT Links",
         "metrics_title": "Payload Metrics",
         "metrics_vehicles": "Tracked Vehicles:",
         "metrics_alerts": "Route Alerts:",
         "alerts_title": "Alerts Wall (Feeds)",
         "alerts_empty": "No active alerts.",
+        "loading_msg": "Syncing data...",
         "popup_vehicle": "Vehicle",
         "popup_id": "Route ID",
         "popup_route": "Route",
@@ -87,8 +113,13 @@ const translations = {
         "popup_type": "Type",
         "na": "N/A"
     },
+
+    // -----------------------------------------------------------------------
+    // Spanish
+    // -----------------------------------------------------------------------
     es: {
-        "app_title": "Inspector GTFS-RT Python",
+        "app_title": "Inspector GTFS-RT Python 🚌",
+        "app_subtitle": "Monitoreo en Tiempo Real",
         "settings_link_vp": "Posiciones de Vehículos",
         "settings_link_tu": "Actualizaciones de Viaje",
         "settings_link_alert": "Alertas",
@@ -102,18 +133,21 @@ const translations = {
         "visuals_stops": "Mostrar Paradas de la Línea",
         "visuals_speed_kmh": "Asumir feed recibido en km/h (y no m/s)",
         "visuals_raw_data": "Ver Datos en Bruto (JSON)",
-        "msg_settings_saved": "Configuración guardada!",
+        "msg_settings_saved": "¡Configuración guardada!",
         "msg_settings_err": "Error al guardar.",
         "msg_gtfs_select": "Seleccione un archivo .zip",
         "msg_uploading": "Subiendo y procesando... Espere.",
         "msg_gtfs_success": "¡GTFS Estático cargado con éxito!",
         "msg_gtfs_err": "Error en la subida",
+        "dir_0": "Ida",
+        "dir_1": "Vuelta",
         "links_title": "Enlaces GTFS-RT",
         "metrics_title": "Métricas de Carga",
         "metrics_vehicles": "Vehículos Rastreados:",
         "metrics_alerts": "Alertas de Ruta:",
         "alerts_title": "Muro de Alertas",
         "alerts_empty": "No hay alertas activas.",
+        "loading_msg": "Sincronizando datos...",
         "popup_vehicle": "Vehículo",
         "popup_id": "ID de Línea",
         "popup_route": "Línea",
@@ -133,21 +167,25 @@ const translations = {
     }
 };
 
-window.currentLang = 'pt';
+// Active language (default: Portuguese)
+window.currentLang = "pt";
 
+/**
+ * Apply the selected language to all DOM elements with [data-i18n] attributes
+ * and dispatch a 'languageChanged' event for any listeners.
+ *
+ * @param {string} lang - Language code ('pt', 'en', or 'es').
+ */
 function setLanguage(lang) {
     if (!translations[lang]) return;
     window.currentLang = lang;
-    
-    // Update data-i18n attributes
-    const elements = document.querySelectorAll('[data-i18n]');
-    elements.forEach(el => {
-        const key = el.getAttribute('data-i18n');
+
+    document.querySelectorAll("[data-i18n]").forEach(el => {
+        const key = el.getAttribute("data-i18n");
         if (translations[lang][key]) {
-            el.innerHTML = translations[lang][key]; // innerHTML allows updating complex tags if needed
+            el.textContent = translations[lang][key];
         }
     });
 
-    // Optionally dispatch an event if external scripts need to re-render
-    window.dispatchEvent(new Event('languageChanged'));
+    window.dispatchEvent(new Event("languageChanged"));
 }
