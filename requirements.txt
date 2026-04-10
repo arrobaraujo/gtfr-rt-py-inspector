@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+gtfs-realtime-bindings
+requests
+pandas
+python-multipart

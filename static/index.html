@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GTFS-RT Inspector</title>
+    <!-- Configurações do Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-rotatedmarker/leaflet.rotatedMarker.js"></script>
+    
+    <!-- Fontes do Google -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/i18n.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Sidebar Dinâmica -->
+        <aside class="sidebar">
+            <div class="sidebar-header" style="position: relative;">
+                <h1 data-i18n="app_title">GTFS-RT Inspector 🚌</h1>
+                <select id="lang-selector" onchange="setLanguage(this.value)" style="position: absolute; right: 0; top: 0; background: rgba(0,0,0,0.5); color: white; border: 1px solid var(--border); border-radius: 4px; padding: 4px;">
+                    <option value="pt">PT</option>
+                    <option value="en">EN</option>
+                    <option value="es">ES</option>
+                </select>
+                <p>Monitoramento em Tempo Real</p>
+            </div>
+            
+            <div class="sidebar-section metrics">
+                <div class="metric-card">
+                    <span class="metric-value" id="metrics-vehicles">0</span>
+                    <span class="metric-label" data-i18n="metrics_vehicles">Veículos Ativos</span>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-value" id="metrics-alerts">0</span>
+                    <span class="metric-label" data-i18n="metrics_alerts">Alertas</span>
+                </div>
+            </div>
+
+            <!-- Upload Estático GTFS -->
+            <div class="sidebar-section">
+                <h2 data-i18n="upload_title">Upload GTFS Estático</h2>
+                <div class="upload-container">
+                    <input type="file" id="gtfs-upload" accept=".zip" />
+                    <button class="btn btn-primary" onclick="uploadGTFS()" data-i18n="upload_btn">Processar ZIP</button>
+                </div>
+                <div id="upload-status" class="status-msg"></div>
+            </div>
+
+            <!-- Configurações API Links -->
+            <div class="sidebar-section settings">
+                <h2 data-i18n="visuals_title">Visuais do Mapa</h2>
+                <div class="input-group">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 8px">
+                        <input type="checkbox" id="chk-light-map"> <span data-i18n="visuals_light_map">Fundo do Mapa Claro</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 8px">
+                        <input type="checkbox" id="chk-focus"> <span data-i18n="visuals_focus">Ocultar outros veículos ao focar</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 8px">
+                        <input type="checkbox" id="chk-stops"> <span data-i18n="visuals_stops">Mostrar Paradas da Linha</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 8px">
+                        <input type="checkbox" id="chk-speed-kmh" checked> <span data-i18n="visuals_speed_kmh">Assumir feed recebido em km/h (e não m/s)</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="chk-raw-data"> <span data-i18n="visuals_raw_data">Visualizar Dados Brutos (JSON)</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="sidebar-section settings">
+                <h2 data-i18n="links_title">Links GTFS-RT</h2>
+                <div class="input-group">
+                    <label data-i18n="settings_link_vp">Vehicle Positions</label>
+                    <input type="text" id="link-vp" placeholder="URL do endpoint VP">
+                </div>
+                <div class="input-group">
+                    <label data-i18n="settings_link_tu">Trip Updates</label>
+                    <input type="text" id="link-tu" placeholder="URL do endpoint TU">
+                </div>
+                <div class="input-group">
+                    <label data-i18n="settings_link_alert">Alerts</label>
+                    <input type="text" id="link-a" placeholder="URL do endpoint Alerts">
+                </div>
+                <div class="input-group">
+                    <label data-i18n="settings_interval">Intervalo de Relógio (segundos)</label>
+                    <input type="number" id="sync-interval" value="30" min="2" max="300" style="background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border); color: var(--text-primary); border-radius: 6px; padding: 10px 12px; font-size: 0.875rem; width: 100%; transition: all 0.2s;">
+                </div>
+                <button class="btn btn-success" onclick="saveSettings()" data-i18n="settings_btn_save">Salvar Configurações</button>
+                <div id="settings-status" class="status-msg"></div>
+            </div>
+            
+            <!-- Lista de Alertas -->
+            <div class="sidebar-section flex-grow">
+                <h2 data-i18n="alerts_title">Últimos Alertas</h2>
+                <div id="alerts-container" class="alerts-list">
+                    <p class="empty-state" data-i18n="alerts_empty">Buscando alertas...</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Container do Mapa -->
+        <main class="map-container" style="position: relative;">
+            <div id="map" style="width: 100%; height: 100%;"></div>
+            <pre id="raw-data-container" style="display: none; position: absolute; top:0; left:0; width:100%; height:100%; margin:0; padding:20px; background: rgba(0,0,0,0.9); color: #0f0; overflow: auto; z-index: 9999; font-size: 13px; line-height: 1.5; box-sizing: border-box;"></pre>
+            
+            <!-- Overlay Carregando -->
+            <div id="loading-overlay" class="loading-overlay hidden">
+                <div class="spinner"></div>
+                <p>Sincronizando dados...</p>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
