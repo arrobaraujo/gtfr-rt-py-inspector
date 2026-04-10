@@ -67,7 +67,7 @@ The app will be available at `http://localhost:8000`.
 
 Looking for data to test? Here are some public feeds compatible with the inspector:
 
-- **Belo Horizonte, Brazil (PBH)**: [Static GTFS](https://dados.pbh.gov.br/dataset/gtfs) / [GTFS-RT PBH](https://dados.pbh.gov.br/dataset/gtfs-rt)
+- **Belo Horizonte, Brazil**: [Static GTFS](https://dados.pbh.gov.br/dataset/gtfs) / [GTFS-RT PBH](https://dados.pbh.gov.br/dataset/gtfs-rt)
 - **Metro Bilbao, Spain**: [Static GTFS](https://mobilitydatabase.org/feeds/gtfs/mdb-3052) / [GTFS-RT](https://mobilitydatabase.org/feeds/gtfs_rt/mdb-3058)
 
 ## ⚖️ License
