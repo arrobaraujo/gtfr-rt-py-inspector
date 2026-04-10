@@ -83,7 +83,7 @@ class GTFSState:
             }
         except Exception as e:
             print(f"Error loading GTFS static zip: {e}")
-            return {"status": "error", "message": str(e)}
+            return {"status": "error", "message": "Failed to process the uploaded GTFS file."}
 
 
 # Module-level singleton

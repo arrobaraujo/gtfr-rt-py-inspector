@@ -83,9 +83,15 @@ async def upload_gtfs(file: UploadFile = File(...)):
     Accept a ``gtfs.zip`` upload, parse it with Pandas, and store the
     resulting DataFrames in the application state for enrichment queries.
     """
-    contents = await file.read()
-    result = state.load_static_zip(contents)
-    return JSONResponse(content=result)
+    try:
+        contents = await file.read()
+        result = state.load_static_zip(contents)
+        return JSONResponse(content=result)
+    except Exception:
+        return JSONResponse(
+            status_code=500,
+            content={"status": "error", "message": "Internal error processing GTFS file."},
+        )
 
 
 @app.get("/api/trip-shape/{trip_id}")
