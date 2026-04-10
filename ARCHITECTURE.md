@@ -1,161 +1,64 @@
-# Architecture
+# Project Architecture
 
-This document describes the internal architecture of GTFS-RT Python Inspector, aiming to help contributors and maintainers understand how the system is structured, how data flows through it, and why specific design choices were made.
+This document provides a deep technical dive into the structure, data flow, and design principles of the **GTFS-RT Python Inspector**.
 
-## High-Level Overview
+## 🏗 High-Level Design
 
-```
-┌─────────────────────┐         ┌────────────────────────────┐
-│   Browser Client    │◄───────►│   FastAPI Backend (Python) │
-│  (Vanilla JS + CSS) │  HTTP   │   main.py + uvicorn        │
-└─────────────────────┘         └────────────┬───────────────┘
-                                             │
-                              ┌──────────────┴──────────────┐
-                              │    gtfs_processor.py         │
-                              │  ┌────────────┐ ┌─────────┐ │
-                              │  │  Static    │ │ RT Feed │ │
-                              │  │  GTFS      │ │ Parser  │ │
-                              │  │  (Pandas)  │ │ (Proto) │ │
-                              │  └────────────┘ └─────────┘ │
-                              └──────────────────────────────┘
-```
+The system is architected as a decoupled **Single Page Application (SPA)** that communicates with a **FastAPI** backend. 
 
-The application follows a simple **two-layer** model:
+### Core Components
+1. **Frontend (Map Discovery Layer)**: Built with Leaflet.js, vanilla JavaScript, and CSS. It handles all geospatial rendering, polling logic, and stateful UI transitions.
+2. **Backend (Data Ingestion/Enrichment Layer)**: A Python service that manages feed fetching, Protobuf parsing, and in-memory static GTFS reconciliation using Pandas.
 
-1. **Backend (Python/FastAPI):** Serves static files, exposes REST API endpoints, fetches and parses GTFS-Realtime Protocol Buffers, and merges them with static GTFS data held in memory.
-2. **Frontend (HTML/JS/CSS):** A single-page application that renders a Leaflet map, polls the backend at configurable intervals, and presents all data through an interactive sidebar.
+## 📡 Backend Architecture
 
-## Backend
+### State Management (`gtfs_processor.py`)
+The backend maintains a global `GTFSState` singleton. This avoids the overhead of a database for medium-sized transit datasets (typically < 100MB static GTFS).
+- **Static Storage**: Data is stored as an in-memory dictionary of DataFrames (`routes`, `trips`, `stops`, etc.).
+- **UTF-8-SIG Handling**: Automatic stripping of the Byte Order Mark (BOM) sequence during CSV parsing to ensure column names like `route_id` are correctly indexed across different transit provider exports.
 
-### `main.py` — Application Entry Point
+### Real-Time Pipeline (`process_rt_data`)
+1. **Fetch**: Simultaneous download of Vehicle Positions, Trip Updates, and Service Alerts feeds.
+2. **Standardization**: Values from multiple feed entities are normalized into a unified vehicle object.
+3. **Enrichment**: The system performs a reverse lookup on the static DataFrames based on `route_id` and `trip_id`:
+    - **Fares**: Calculated by joining `fare_rules` with `fare_attributes`.
+    - **Geometries**: Resolved via `shapes` and `trips` cross-referencing.
+4. **Serialization**: Data is delivered to the frontend as a JSON payload for efficiency.
 
-FastAPI application that defines the following endpoints:
+### API Endpoints (`main.py`)
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/rt` | `GET` | Main telemetry endpoint returning vehicles, alerts, and trip updates. |
+| `/api/networks` | `GET/POST/DELETE` | CRUD operations for feed preset management (persisted in `networks.json`). |
+| `/api/upload-gtfs` | `POST` | In-memory ZIP processor for static GTFS files. |
+| `/api/trip-shape/{id}` | `GET` | Returns a GeoJSON FeatureCollection including shape lines and associated stops. |
 
-| Method | Path | Purpose |
-|--------|------|---------|
-| `GET` | `/` | Serves the main `index.html` interface |
-| `GET` | `/api/rt` | Returns merged real-time + static vehicle data |
-| `GET` | `/api/settings` | Returns the current GTFS-RT feed URLs |
-| `POST` | `/api/settings` | Updates GTFS-RT feed URLs at runtime |
-| `POST` | `/api/upload-gtfs` | Accepts a `gtfs.zip`, parses it into memory |
-| `GET` | `/api/trip-shape/{trip_id}` | Returns GeoJSON geometry for a specific trip |
+## 🎨 Frontend Architecture
 
-Static files are mounted via `StaticFiles` middleware under `/static`.
+### UI Controller (`app.js`)
+The application follows a **Reactivity Loop**:
+- **Polling Logic**: High-performance polling with a default 30s interval. 
+- **Immediate Refresh**: A critical handler triggers an immediate `pollData` cycle upon successful GTFS upload, ensuring the UI populates metadata without latency.
+- **Marker In-Place Updates**: Markers are cached in a `vehicleMarkers` map. Instead of clearing the map on every poll, existing markers are updated via `setLatLng` and `setRotationAngle` to prevent visual flickering.
 
-### `gtfs_processor.py` — Core Data Engine
+### Visualization & Interaction
+- **Accordion System**: A pure CSS/JS hybrid using the `.collapsed` state to manage sidebar density.
+- **Enhanced Data Inspector**: A tabbed overlay (`Vehicles`, `Trip Updates`, `Alerts`) that formats and highlights raw JSON fields for developers and field engineers.
+- **Reactive Filters**: Checkbox listeners trigger instantaneous `updateMap` calls using the `lastVehicles` local cache for sub-millisecond responsiveness.
 
-This module manages all data logic through two main constructs:
+### Localization (`i18n.js`)
+Uses a `data-i18n` attribute system. The engine resolves keys from localized dictionaries and updates the DOM in a single pass. Supports localized placeholders and technical popup labels.
 
-#### `GTFSState` class
+## 🛠 Project Design Decisions
 
-A singleton-style state container that holds:
+| Choice | Rationale |
+|--------|-----------|
+| **No Virtual DOM** | Leaflet directly manages map state; adding a VDOM layer (like React/Vue) would add unnecessary overhead for a purely map-centric application. |
+| **In-Memory Pandas Processing** | Allows for extremely fast joins between real-time and static data compared to SQLite/File-based processing. |
+| **CartoDB Base Maps** | Selected for high-contrast visibility and reliable global availability. |
+| **Marker Rotation** | Implementing rotation on the frontend via `leaflet-rotatedmarker` enables directional arrows derived from the GTFS-RT `bearing` field. |
 
-- **`rt_urls`**: Dictionary of live GTFS-RT feed URLs (vehicle positions, trip updates, alerts). Defaults to empty strings — URLs are configured at runtime via the UI.
-- **`static_data`**: Dictionary of Pandas DataFrames parsed from an uploaded `gtfs.zip`. Supports: `routes`, `trips`, `shapes`, `stops`, `stop_times`, `fare_attributes`, `fare_rules`.
+## 🚢 Deployment & Environment
 
-Key methods:
-- `set_urls(vp, tu, alerts)` — Updates feed endpoints dynamically.
-- `load_static_zip(content: bytes)` — Reads a ZIP from memory, parses CSV files with `UTF-8-SIG` encoding (to handle Windows BOM), and stores them as DataFrames. Uses a constant `GTFS_STATIC_FILES` list for DRY iteration.
-
-#### Helper Functions
-
-- **`_safe_str(df, row_idx, col)`** — Safely extracts a string from a DataFrame cell, handling NaN and whitespace.
-- **`_enrich_vehicle(route_id, trip_id, ...)`** — Isolated enrichment logic that looks up route, fare, and trip metadata from the static DataFrames. Returns a dict ready to be merged into the vehicle payload.
-- **`fetch_feed(url)`** — Downloads and parses a GTFS-RT Protobuf. Returns `None` on failure or empty URL.
-
-#### `process_rt_data()` function
-
-1. Fetches each configured Protobuf feed via `requests`.
-2. Iterates over `FeedEntity` objects.
-3. For each vehicle position entity, looks up enrichment data in the static DataFrames:
-   - **Route info:** `route_short_name`, `route_long_name`, `route_desc`, `route_color`
-   - **Trip info:** `trip_headsign`, `direction_id`
-   - **Fare info:** `fare_price`, `fare_currency` (via `fare_rules` → `fare_attributes` join)
-4. Returns a JSON-serializable dictionary with `vehicles` and `alerts` arrays.
-
-#### `get_trip_shape(trip_id)` function
-
-1. Looks up the `shape_id` for the given `trip_id` in the trips DataFrame.
-2. Builds a GeoJSON `FeatureCollection` containing:
-   - A `LineString` feature from the shapes DataFrame.
-   - `Point` features for each stop along the trip (from `stop_times` joined with `stops`).
-
-### Data Flow Diagram
-
-```
-GTFS-RT Protobuf Feeds              Static GTFS ZIP (uploaded once)
-        │                                      │
-        ▼                                      ▼
-   fetch_feed(url)                    load_static_zip(bytes)
-        │                                      │
-        ▼                                      ▼
-  gtfs_realtime_pb2                     pandas DataFrames
-   FeedMessage                        (routes, trips, shapes,
-        │                              stops, stop_times, fares)
-        │                                      │
-        └──────────────┬───────────────────────┘
-                       ▼
-              process_rt_data()
-              Merge RT + Static
-                       │
-                       ▼
-              JSON Response → /api/rt
-```
-
-## Frontend
-
-### File Structure
-
-```
-static/
-├── index.html          # Main SPA shell
-├── css/
-│   └── style.css       # Glassmorphism design system
-└── js/
-    ├── app.js          # Core application logic
-    └── i18n.js         # Internationalization engine
-```
-
-### `app.js` — Application Controller
-
-Responsibilities:
-
-- **Map initialization:** Creates a Leaflet map with CARTO Dark Matter tiles (toggleable to Light).
-- **Polling loop:** Fetches `/api/rt` at a user-configurable interval (default 30s, range 2–300s).
-- **Marker management:** Uses a `Map<id, marker>` structure to update existing markers in-place (position + rotation) rather than recreating them, avoiding flicker.
-- **Popup generation:** `createPopupContent(vehicle)` builds rich HTML popups with all available vehicle metadata, using `t(key)` for i18n string resolution.
-- **Shape rendering:** On marker click, fetches `/api/trip-shape/{trip_id}` and draws a GeoJSON polyline + stop markers on the map.
-- **Focus mode:** When enabled, hides all markers except the selected vehicle.
-- **Raw data view:** Toggles between map and a full JSON dump of the API response for debugging.
-- **Speed unit toggle:** Supports both m/s → km/h conversion and raw km/h passthrough, configurable via checkbox.
-
-### `i18n.js` — Internationalization
-
-A lightweight, framework-free translation system:
-
-- **Translation dictionaries:** Three objects (`pt`, `en`, `es`) mapping keys to localized strings.
-- **`setLanguage(lang)`:** Iterates over all DOM elements with `data-i18n` attributes, replacing their `textContent` with the appropriate translation.
-- **`t(key)`:** Returns the translated string for the current language; used for dynamic content in JavaScript (popups, status messages).
-
-### `style.css` — Design System
-
-Built on CSS custom properties (variables) for consistent theming:
-
-- Dark-mode first with `--bg-dark`, `--bg-panel`, `--accent` tokens.
-- Glassmorphism effects via `backdrop-filter: blur()`.
-- Responsive sidebar with scrollable overflow.
-- Custom-styled Leaflet popup overrides matching the dark theme.
-
-## Key Design Decisions
-
-| Decision | Rationale |
-|----------|-----------|
-| **No frontend framework** | Reduces bundle size and complexity; the app is a single view with straightforward DOM updates |
-| **In-memory static data** | Avoids database dependencies; a single GTFS ZIP is small enough to fit in RAM as DataFrames |
-| **UTF-8-SIG parsing** | Many government transit agencies export CSVs with BOM markers; this prevents column-name corruption |
-| **Configurable speed units** | GTFS-RT spec defines speed in m/s, but some providers send km/h; the toggle avoids wrong calculations |
-| **Raw JSON debug view** | Essential for field engineers verifying feed quality without external tools |
-
-## Docker Support
-
-The `Dockerfile` uses `python:3.9-slim` as its base, installs dependencies from `requirements.txt`, and runs `uvicorn` directly. The `docker-compose.yml` provides a one-command startup with volume mounting for development.
+- **Dockerized**: The project includes a `Dockerfile` and `docker-compose.yml` for reproducible environments.
+- **Windows Workflow**: A `start.bat` script is provided to abstract Python environment management (pip/venv) for non-developer users.

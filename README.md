@@ -1,74 +1,68 @@
 # GTFS-RT Python Inspector
 
-A high-performance, real-time geographic visualization tool for monitoring public transit fleets. It consumes GTFS-Realtime (GTFS-RT) feeds and overlays them on a dynamic Leaflet map, enriching real-time positions with static GTFS data (like fares, routes, shapes, and localized stops). 
+A high-performance, real-time geographic visualization tool for monitoring public transit fleets. It consumes GTFS-Realtime (GTFS-RT) feeds and overlays them on a dynamic Leaflet map, enriching real-time positions with technical metadata from static GTFS files (routes, trips, shapes, stops, and fares).
 
-This application uses **FastAPI** on the backend and an **HTML/Vanilla JS/CSS** stack on the frontend to deliver a smooth, Glassmorphism-style "Premium" user interface. No bulky frontend frameworks, just clean and optimized rendering.
+This application utilizes **FastAPI** on the backend and an **HTML/Vanilla JS/CSS** stack on the frontend to deliver a premium, high-speed user interface with zero reliance on heavy frontend frameworks.
 
-## Core Features
+## 🚀 Key Features
 
-- **Live Vehicle Tracking:** Pulls GTFS-RT Protocol Buffers dynamically and aligns vehicle markers over the map using real-time coordinates and rotation (`bearing`).
-- **Static GTFS Merging:** Upload a traditional `gtfs.zip` through the interface to automatically cross-reference data in memory (via `pandas`), displaying real-time data enriched with route names, destinations, line descriptions, and fares.
-- **Dynamic Shapes & Geometry:** Click on a vehicle to plot the exact `<LineString>` geometry corresponding to its trip (if provided in your GTFS).
-- **Interactive Line Stops:** Toggle line stops to view all mapped points along the selected trip's route, complete with station codes and platform metadata.
-- **Dark/Light Mode Maps:** Seamlessly toggle between CARTO Dark Matter and Positron base maps without losing map state.
-- **Multilingual Support:** The interface is fully internationalized natively in JavaScript, actively supporting English, Portuguese, and Spanish toggles.
+### 📡 Real-Time Monitoring
+- **Live Vehicle Positions**: Automatically pulls Protobuf feeds and maps vehicles with real-time movement and orientation (`bearing`).
+- **Protocol Buffer Support**: Native parsing of `FeedMessage` entities for Vehicles, Trip Updates, and Service Alerts.
+- **Immediate Enrichment**: Merges real-time data with static GTFS metadata instantly upon upload—no more delays in identifying vehicles.
 
-## Prerequisites
+### 📊 Rich Metadata & Inspection
+- **Technical Popups**: Detailed vehicle popups including **Trip ID**, **Direction ID**, **Speed (km/h)**, **Start Time**, and **Fare/Price** info.
+- **Static Alignment**: Correlates RT data with `routes.txt`, `trips.txt`, and `fare_attributes.txt`.
+- **Enhanced Stop Markers**: View stop levels with specialized popups for **Stop ID**, **Stop Code**, **Zone ID**, and **Parent Station**.
+- **Geometry Visualization**: Plots exact trip shapes (`shapes.txt`) on marker click for precise alignment verification.
 
-- **Python 3.9+** (To manage dependencies easily, it's recommended to use virtual environments).
+### 🎨 Premium UI/UX
+- **Glassmorphism Design**: A sleek, translucent, dark-themed dashboard built with modern CSS.
+- **Accordion Sidebar**: Collapsible sections for space management, allowing focus on specific monitoring tools.
+- **Flag-Based Localization**: Custom language selector supporting **English (GB)**, **Portuguese (BR)**, and **Spanish (ES)** with real-time interface translation.
+- **Advanced Raw Data Explorer**: A specialized overlay with **Categorized Tabs** (Vehicles | Trip Updates | Alerts) for deep JSON debugging.
 
-## Installation
+## 🛠 Prerequisites
 
-1. **Clone the Repository:**
+- **Python 3.9+**
+- A modern web browser (Chrome, Firefox, or Edge recommended)
+- GTFS-Realtime Protobuf feed URLs (VP, TU, and Alerts)
+
+## 📦 Installation
+
+1. **Clone the Repository**:
    ```bash
    git clone https://github.com/arrobaraujo/gtfs-rt-py-inspector.git
    cd gtfs-rt-py-inspector
    ```
 
-2. **Set up the Virtual Environment & Install Dependencies:**
-   A convenience script `start.bat` is included for Windows users to automatically create the environment, install dependencies from `requirements.txt`, and boot the server in a single click. Or you can run:
+2. **Setup and Run (One-Click for Windows)**:
+   Simply double-click `start.bat`. It will create a `.venv`, install dependencies, and start the server.
+
+3. **Manual Setup**:
    ```bash
    python -m venv .venv
-   source .venv/bin/activate  # (On Windows use .venv\Scripts\activate)
+   source .venv/bin/activate  # (.venv\Scripts\activate on Windows)
    pip install -r requirements.txt
-   ```
-
-## Usage
-
-### Option A: Standard Python (Windows / Linux / Mac)
-1. Start the backend Web Server:
-   ```bash
    uvicorn main:app --host 0.0.0.0 --port 8000
    ```
-   *Windows users can simply double-click `start.bat`.*
 
-### Option B: Docker (Recommended for GitHub Users)
-You can run the entire service without installing Python natively:
-```bash
-docker build -t gtfs-inspector .
-docker run -p 8000:8000 gtfs-inspector
-```
-Or, if you use Docker Compose:
+## 🐳 Docker Support
+
+Run the inspector in a containerized environment (optional):
 ```bash
 docker-compose up --build
 ```
+The app will be available at `http://localhost:8000`.
 
-### Accessing the Interface
-2. Open your browser and navigate to:
-   ```
-   http://localhost:8000
-   ```
+## 📖 Usage Guide
 
-3. **Configure Feeds:** Use the sidebar to enter your API Access URLs for GTFS-RT feeds (`vehicle_positions`, `trip_updates`, `alerts`).
-4. **Enriching with Static Data:** Upload your region's `gtfs.zip` via the *Upload GTFS Static* section. The backend will parse it using `UTF-8-SIG` to respect BOM encodings typically found in governmental transit exports, seamlessly merging `route_id`, `fare_id`, and `shape_id` schemas.
+1. **Configuration**: Use the sidebar to set your GTFS-RT feed URLs. You can save these as **Source Presets** for quick loading between different regions or agencies.
+2. **Static Data**: Upload a standard `gtfs.zip`. The backend handles `UTF-8-SIG` (BOM) stripping automatically to ensure compatibility with various transit agency exports.
+3. **Map Controls**: Toggle "Fundo do Mapa Claro" for daylight visibility or "Ocultar outros" to focus on a single vehicle's path.
+4. **Export**: Download processed data in **JSON** or **CSV** (optimized for spreadsheet analysis) formats via the Export section.
 
-## Code Architecture
+## ⚖️ License
 
-- `main.py`: Contains the FastAPI application, serving dynamic REST endpoints and HTML assets.
-- `gtfs_processor.py`: Encapsulates the GTFS parsing logic. It unzips and converts static data into Pandas DataFrames, and utilizes `gtfs-realtime-bindings` to unpack Protobuf feeds, merging them efficiently.
-- `static/js/app.js`: Connects to backend REST endpoints, mapping entities to the Leaflet map and interpolating missing values (`N/A`) elegantly.
-- `static/js/i18n.js`: Controls language translation mapping.
-
-## License
-
-This project is licensed under the [GNU General Public License v3.0](LICENSE).
+Distributed under the **GNU General Public License v3.0**. See `LICENSE` for more information.
