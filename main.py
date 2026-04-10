@@ -8,8 +8,8 @@ Endpoints are organized as: settings, data ingestion, real-time query, and UI.
 import os
 from typing import Optional
 
-from fastapi import FastAPI, File, UploadFile
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi import FastAPI, File, UploadFile, Query
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -37,6 +37,14 @@ os.makedirs("static/js", exist_ok=True)
 class SettingsModel(BaseModel):
     """Payload for updating GTFS-RT feed URLs."""
 
+    vehicle_positions: str = ""
+    trip_updates: str = ""
+    alerts: str = ""
+
+
+class NetworkModel(BaseModel):
+    """Payload for adding/updating a network preset."""
+    name: str
     vehicle_positions: str = ""
     trip_updates: str = ""
     alerts: str = ""
@@ -75,6 +83,55 @@ def update_settings(settings: SettingsModel):
         "status": "success",
         "urls": state.rt_urls,
     })
+
+
+@app.get("/api/networks")
+def list_networks():
+    """Return all saved network presets."""
+    return JSONResponse(content=state.networks)
+
+
+@app.post("/api/networks")
+def save_network(network: NetworkModel):
+    """Save a new network preset."""
+    state.add_network(
+        network.name,
+        network.vehicle_positions,
+        network.trip_updates,
+        network.alerts,
+    )
+    return JSONResponse(content={"status": "success"})
+
+
+@app.delete("/api/networks/{name}")
+def delete_network(name: str):
+    """Delete a network preset by name."""
+    if state.delete_network(name):
+        return JSONResponse(content={"status": "success"})
+    return JSONResponse(status_code=404, content={"status": "error", "message": "Network mapping not found"})
+
+
+@app.get("/api/export")
+def export_data(format: str = Query("json")):
+    """
+    Export current real-time data to JSON or XLSX.
+    """
+    data = process_rt_data()
+    if format == "csv":
+        # Exporting only vehicles for now as CSV is a single sheet format
+        if not data["vehicles"]:
+            return JSONResponse(status_code=404, content={"message": "No vehicle data to export"})
+        
+        v_df = pd.DataFrame(data["vehicles"])
+        csv_data = v_df.to_csv(index=False, sep=";", encoding="utf-8-sig")
+        
+        return StreamingResponse(
+            io.BytesIO(csv_data.encode("utf-8-sig")),
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=gtfs_vehicles.csv"}
+        )
+
+    return JSONResponse(content=data)
 
 
 @app.post("/api/upload-gtfs")

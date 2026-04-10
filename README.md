@@ -21,7 +21,7 @@ This application uses **FastAPI** on the backend and an **HTML/Vanilla JS/CSS** 
 
 1. **Clone the Repository:**
    ```bash
-   git clone https://github.com/yourusername/gtfs-rt-py-inspector.git
+   git clone https://github.com/arrobaraujo/gtfs-rt-py-inspector.git
    cd gtfs-rt-py-inspector
    ```
 

@@ -10,6 +10,8 @@ This module is responsible for:
 """
 
 import io
+import json
+import os
 import zipfile
 from typing import Any, Dict, List, Optional
 
@@ -46,6 +48,43 @@ class GTFSState:
         self.static_data: Dict[str, Optional[pd.DataFrame]] = {
             name: None for name in GTFS_STATIC_FILES
         }
+        self.networks_file = "networks.json"
+        self.networks: Dict[str, Dict[str, str]] = self._load_networks()
+
+    def _load_networks(self) -> Dict[str, Dict[str, str]]:
+        """Load saved networks from local JSON file."""
+        if os.path.exists(self.networks_file):
+            try:
+                with open(self.networks_file, "r") as f:
+                    return json.load(f)
+            except Exception as e:
+                print(f"Error loading networks: {e}")
+        return {}
+
+    def _save_networks(self) -> None:
+        """Persist current networks to local JSON file."""
+        try:
+            with open(self.networks_file, "w") as f:
+                json.dump(self.networks, f, indent=4)
+        except Exception as e:
+            print(f"Error saving networks: {e}")
+
+    def add_network(self, name: str, vp: str, tu: str, alerts: str) -> None:
+        """Add or update a network preset."""
+        self.networks[name] = {
+            "vehicle_positions": vp,
+            "trip_updates": tu,
+            "alerts": alerts,
+        }
+        self._save_networks()
+
+    def delete_network(self, name: str) -> bool:
+        """Remove a network preset."""
+        if name in self.networks:
+            del self.networks[name]
+            self._save_networks()
+            return True
+        return False
 
     def set_urls(
         self,
@@ -378,6 +417,7 @@ def get_trip_shape(trip_id: str) -> Optional[Dict]:
                     "location_type": _safe_str(s, 0, "location_type"),
                     "parent_station": _safe_str(s, 0, "parent_station"),
                     "platform_code": _safe_str(s, 0, "platform_code"),
+                    "zone_id": _safe_str(s, 0, "zone_id"),
                 },
             })
 

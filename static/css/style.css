@@ -51,6 +51,10 @@ body {
     font-size: 1.5rem;
     font-weight: 700;
     margin-bottom: 4px;
+    padding-right: 70px; /* Space for language selector */
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .sidebar-header p {
@@ -64,16 +68,57 @@ body {
 }
 
 .sidebar-section h2 {
-    font-size: 1rem;
-    font-weight: 600;
-    margin-bottom: 16px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 0px;
     color: var(--text-secondary);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    transition: color 0.2s;
+    user-select: none;
 }
 
-/* Metrics */
-.metrics {
+.sidebar-section h2:hover {
+    color: var(--text-primary);
+}
+
+.sidebar-section h2::after {
+    content: "▲";
+    font-size: 0.7rem;
+    transition: transform 0.3s ease;
+    opacity: 0.5;
+}
+
+.sidebar-section.collapsed h2::after {
+    transform: rotate(180deg);
+}
+
+.sidebar-section.collapsed {
+    padding-bottom: 12px;
+}
+
+.section-content {
+    max-height: 1000px;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0, 1, 0, 1), opacity 0.3s;
+    opacity: 1;
+    margin-top: 16px;
+}
+
+.sidebar-section.collapsed .section-content {
+    max-height: 0;
+    margin-top: 0;
+    opacity: 0;
+    transition: max-height 0.3s ease-out, opacity 0.2s;
+}
+
+/* Metrics Grid Layout */
+.metrics .section-content {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px;
@@ -102,6 +147,97 @@ body {
     text-align: center;
 }
 
+/* Raw Data Overlay */
+.raw-data-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.98);
+    backdrop-filter: blur(12px);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    color: #e2e8f0;
+}
+
+.raw-data-header {
+    padding: 16px 24px;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.raw-tabs {
+    display: flex;
+    gap: 8px;
+}
+
+.raw-tab {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #94a3b8;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.raw-tab:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+}
+
+.raw-tab.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+.close-raw {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.close-raw:hover {
+    background: var(--danger);
+    transform: rotate(90deg);
+}
+
+.raw-data-content {
+    flex: 1;
+    overflow: auto;
+    padding: 24px;
+}
+
+.raw-data-content pre {
+    margin: 0;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: #10b981; /* Emerald green for data */
+}
+
+/* Modal styles cleanup */
+.modal-content h2 {
+    margin-bottom: 12px;
+}
+
 /* Forms & Inputs */
 .input-group {
     margin-bottom: 12px;
@@ -114,7 +250,7 @@ body {
     margin-bottom: 4px;
 }
 
-input[type="text"] {
+input[type="text"], input[type="number"], select {
     width: 100%;
     background: rgba(0, 0, 0, 0.2);
     border: 1px solid var(--border);
@@ -125,7 +261,7 @@ input[type="text"] {
     transition: all 0.2s;
 }
 
-input[type="text"]:focus {
+input[type="text"]:focus, input[type="number"]:focus, select:focus {
     outline: none;
     border-color: var(--accent);
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
@@ -133,13 +269,17 @@ input[type="text"]:focus {
 
 .btn {
     width: 100%;
-    padding: 10px 16px;
+    height: 42px;
+    padding: 0 16px;
     border: none;
     border-radius: 6px;
     font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .btn-primary {
@@ -154,11 +294,21 @@ input[type="text"]:focus {
 .btn-success {
     background: var(--success);
     color: white;
-    margin-top: 8px;
 }
 
 .btn-success:hover {
     background: #059669;
+}
+
+.btn-group {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+}
+
+.btn-group .btn {
+    flex: 1;
+    margin: 0;
 }
 
 .upload-container {
@@ -291,4 +441,168 @@ input[type="file"] {
 .popup-content p {
     margin: 4px 0;
     font-size: 0.9rem;
+}
+
+/* Modals */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    transition: all 0.3s;
+}
+
+.modal-content {
+    background: var(--bg-dark);
+    padding: 32px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    width: 400px;
+    max-width: 90%;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+.modal.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Button Variants */
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.btn-danger {
+    background: var(--danger);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Marker Cluster Overrides */
+.marker-cluster-small { background-color: rgba(59, 130, 246, 0.6); }
+.marker-cluster-small div { background-color: rgba(59, 130, 246, 0.6); color: white; }
+.marker-cluster-medium { background-color: rgba(37, 99, 235, 0.6); }
+.marker-cluster-medium div { background-color: rgba(37, 99, 235, 0.6); color: white; }
+.marker-cluster-large { background-color: rgba(29, 78, 216, 0.6); }
+.marker-cluster-large div { background-color: rgba(29, 78, 216, 0.6); color: white; }
+
+.marker-cluster div {
+    width: 30px;
+    height: 30px;
+    margin-left: 5px;
+    margin-top: 5px;
+    text-align: center;
+    border-radius: 15px;
+    font-weight: 700;
+    font-size: 12px;
+    line-height: 30px;
+}
+
+.info-icon {
+    cursor: help;
+    font-size: 1.1rem;
+    opacity: 0.8;
+    transition: all 0.2s;
+    padding: 0 6px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 24px;
+    width: 24px;
+}
+
+.info-icon:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Ensure icons in headers don't interfere with collapse click visually */
+.sidebar-section h2 span.info-icon {
+    margin-left: 8px;
+    cursor: help;
+}
+
+/* Custom Flags Dropdown */
+.custom-dropdown {
+    position: absolute;
+    right: 12px;
+    top: 12px;
+    width: 80px;
+    z-index: 2000;
+}
+
+.dropdown-trigger {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--border);
+    padding: 6px 10px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.dropdown-trigger:hover {
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.dropdown-trigger img {
+    border-radius: 2px;
+}
+
+.dropdown-options {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 100%;
+    background: var(--bg-dark);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-top: 4px;
+    overflow: hidden;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+}
+
+.dropdown-options .option {
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.dropdown-options .option:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.dropdown-options .option img {
+    border-radius: 2px;
 }

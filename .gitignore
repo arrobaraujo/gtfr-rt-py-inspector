@@ -40,3 +40,6 @@ venv.bak/
 .idea/
 .DS_Store
 *.swp
+
+.kilocode/
+contexto/
