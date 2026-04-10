@@ -63,6 +63,13 @@ The app will be available at `http://localhost:8000`.
 3. **Map Controls**: Toggle "Fundo do Mapa Claro" for daylight visibility or "Ocultar outros" to focus on a single vehicle's path.
 4. **Export**: Download processed data in **JSON** or **CSV** (optimized for spreadsheet analysis) formats via the Export section.
 
+## 🔗 Test Feeds & Examples
+
+Looking for data to test? Here are some public feeds compatible with the inspector:
+
+- **Belo Horizonte, Brazil (PBH)**: [Static GTFS](https://dados.pbh.gov.br/dataset/gtfs) / [GTFS-RT PBH](https://dados.pbh.gov.br/dataset/gtfs-rt)
+- **Metro Bilbao, Spain**: [Static GTFS](https://mobilitydatabase.org/feeds/gtfs/mdb-3052) / [GTFS-RT](https://mobilitydatabase.org/feeds/gtfs_rt/mdb-3058)
+
 ## ⚖️ License
 
 Distributed under the **GNU General Public License v3.0**. See `LICENSE` for more information.
